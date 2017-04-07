@@ -1,0 +1,62 @@
+body { font-family: sans-serif; }
+
+div.tabholder { width: 100%; }
+div.mapholder { width: 100%; }
+
+div.tabholder ul.tabs {
+	list-style: none;
+	display: block;
+}
+
+div.tabholder ul.tabs li {
+	float: left;
+	background: #aaa;
+	margin: 0; padding: 10px;
+}
+
+div.tabholder ul.tabs li.active {
+	display: inline;
+	background: #faa;
+}
+
+div.tabholder div { clear: both; margin: 0.5em; }
+div.tabholder div.tab { display: none; }
+div.tabholder div.tab.active { display: block; }
+
+h1 { font-family: 'Pirata One', fantasy; }
+h2 { font-family: 'Pirata One', fantasy; }
+h3 { display: inline; font-family: 'Pirata One', fantasy; }
+
+div.tabholder .spacer { margin: 5% 6%; }
+
+div.mapholder h1 { height: 5%; font-family: 'Pirata One', fantasy; margin-top: 20px; margin-left: 100px; }
+div.mapholder .spacer { margin-left: 6%; margin-top: 8%; width: 89%; height: 82%; overflow: hidden; }
+
+button.startbutton { display: block; text-align: center; }
+
+
+@media all and (min-width: 40em) {
+	div.tabholder {
+		position: absolute;
+		left: 0;
+		top: 0;
+		width: 50%;
+		height: 100%;
+		overflow: auto;
+		background: url('img/bg-left.jpg');
+		background-size: 100% 100%;
+		-webkit-background-origin:border;
+	}
+
+	div.mapholder {
+		position: absolute;
+		left: 50%;
+		top: 0;
+		width: 50%;
+		height: 100%;
+		overflow: hidden;
+		background: url('img/bg-right.jpg');
+		background-size: 100% 100%;
+		-webkit-background-origin:border;
+	}
+}
