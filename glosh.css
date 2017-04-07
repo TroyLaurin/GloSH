@@ -27,6 +27,9 @@ h1 { font-family: 'Pirata One', fantasy; }
 h2 { font-family: 'Pirata One', fantasy; }
 h3 { display: inline; font-family: 'Pirata One', fantasy; }
 
+span.textsection .heading h3 { display: block; text-align: center; }
+span.textsection .heading.numbered h3 { background: url('img/number-flair.png'); background-size: contain; background-position: center; background-repeat: no-repeat; vertical-align: middle; text-align: center; height: 2em }
+
 div.tabholder .spacer { margin: 5% 6%; }
 
 div.mapholder h1 { height: 5%; font-family: 'Pirata One', fantasy; margin-top: 20px; margin-left: 100px; }

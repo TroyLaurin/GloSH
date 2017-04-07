@@ -55,9 +55,70 @@ function trackTransforms(ctx){
 		 return setTransform.call(ctx,a,b,c,d,e,f);
 	};
 
+	var resetTransform = ctx.resetTransform;
+	ctx.resetTransform = function(){
+		xform.a = 1;
+		xform.b = 0;
+		xform.c = 0;
+		xform.d = 1;
+		xform.e = 0;
+		xform.f = 0;
+		return resetTransform.call(ctx);
+	};
+
 	var pt  = svg.createSVGPoint();
 	ctx.transformedPoint = function(x,y){
 		 pt.x=x; pt.y=y;
-		 return pt.matrixTransform(xform.inverse());
+		 var inverse = xform.inverse();
+		 return pt.matrixTransform(inverse);
 	}
 }
+
+function zoomPanContext(canvas,scaleFactor,redrawFn) {
+	var ctx = canvas.getContext('2d');
+	trackTransforms(ctx);
+
+	var lastX=0, lastY=0;
+	var dragStart;
+
+	canvas.addEventListener('mousedown',function(evt){
+		 document.body.style.mozUserSelect = document.body.style.webkitUserSelect = document.body.style.userSelect = 'none';
+		 lastX = evt.offsetX || (evt.pageX - canvas.offsetLeft);
+		 lastY = evt.offsetY || (evt.pageY - canvas.offsetTop);
+		 dragStart = ctx.transformedPoint(lastX,lastY);
+	},false);
+
+	canvas.addEventListener('mousemove',function(evt){
+		lastX = evt.offsetX || (evt.pageX - canvas.offsetLeft);
+		lastY = evt.offsetY || (evt.pageY - canvas.offsetTop);
+		if (dragStart){
+			var pt = ctx.transformedPoint(lastX,lastY);
+			ctx.translate(pt.x-dragStart.x,pt.y-dragStart.y);
+			redrawFn(canvas,ctx);
+		}
+	},false);
+
+	canvas.addEventListener('mouseup',function(evt){
+		dragStart = null;
+	},false);
+
+	var zoom = function(clicks){
+		var pt = ctx.transformedPoint(lastX,lastY);
+		ctx.translate(pt.x,pt.y);
+		var factor = Math.pow(scaleFactor,clicks);
+		ctx.scale(factor,factor);
+		ctx.translate(-pt.x,-pt.y);
+		redrawFn(canvas,ctx);
+	}
+
+	var handleScroll = function(evt){
+		var delta = evt.wheelDelta ? evt.wheelDelta/40 : evt.detail ? -evt.detail : 0;
+		if (delta) zoom(delta);
+		return evt.preventDefault() && false;
+	};
+
+	canvas.addEventListener('DOMMouseScroll',handleScroll,false);
+	canvas.addEventListener('mousewheel',handleScroll,false);
+	return ctx;
+}
+
