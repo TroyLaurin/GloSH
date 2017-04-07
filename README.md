@@ -1,0 +1,2 @@
+# GloSH
+Gloomhaven Scenario Helper
