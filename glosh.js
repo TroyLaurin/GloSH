@@ -27,11 +27,13 @@ function Room(key, x, y, r) {
 
 	this.tokens = [];
 	this.monsters = [];
-	this.visited = 1;
+	this.visible = 1;
 
 	this.image = new Image;
 	this.image.src = "img/tile/" + key + ".png";
 }
+// TODO Token
+// TODO Monster
 
 Scene.prototype.setTexts = function(texts) {
 	this.texts = texts;
@@ -69,8 +71,16 @@ Scene.prototype.visit = function(tile) {
 	for (var i in this.rooms) {
 		var room = this.rooms[i];
 		if (room.tile.tile == tile) {
-			room.tile.visited = 1;
+			room.tile.visible = 1;
 		}
+	}
+}
+
+Scene.prototype.prepare = function(mode) {
+	this.mode = mode;
+	for (var i in this.rooms) {
+		var room = this.rooms[i];
+		room.prepare(this);
 	}
 }
 
@@ -78,6 +88,111 @@ Room.prototype.addToken = function(key, x, y, r) {
 	var image = new Image;
 	image.src = "img/token/" + key + ".png";
 	this.tokens.push({ "key": key, "x": +x, "y": +y, "r": +r, "image": image });
+	console.log("Adding token " + image.src + " @ (" + (+x) + "," + (+y) + "/" + (+r) + "°) to room " + this.key);
+}
+Room.prototype.addMonster = function(horz, key, x, y, p2, p3, p4) {
+	var image = new Image;
+	var image_2p = new Image;
+	var image_3p = new Image;
+	var image_4p = new Image;
+
+	image.src = "img/monster/" + (horz ? "Vert-" : "Horz-") + key + ".png";
+	this.monsters.push({ "key": key, "x": +x, "y": +y, "p2": p2.toLowerCase(), "p3": p3.toLowerCase(), "p4": p4.toLowerCase(), "image": image, "image_2p": image_2p, "image_3p": image_3p, "image_4p": image_4p });
+	console.log("Adding monster " + image.src + " @ (" + (+x) + "," + (+y) + ") " + p2 + "/" + p3 + "/" + p4 + " to room " + this.key);
+}
+
+Room.prototype.prepare = function(scene) {
+	for (var i in this.monsters) {
+		var monster = this.monsters[i];
+		switch (scene.mode) {
+		case "2p":
+			monster.image_2p.src = "img/monster/" + (scene.horizontal ? "vert" : "horz") + "-2p-" + monster.p2 + ".png";
+			monster.image_3p.src = "img/monster/" + (scene.horizontal ? "vert" : "horz") + "-3p-" + monster.p2 + ".png";
+			monster.image_4p.src = "img/monster/" + (scene.horizontal ? "vert" : "horz") + "-4p-" + monster.p2 + ".png";
+			break;
+		case "3p":
+			monster.image_2p.src = "img/monster/" + (scene.horizontal ? "vert" : "horz") + "-2p-" + monster.p3 + ".png";
+			monster.image_3p.src = "img/monster/" + (scene.horizontal ? "vert" : "horz") + "-3p-" + monster.p3 + ".png";
+			monster.image_4p.src = "img/monster/" + (scene.horizontal ? "vert" : "horz") + "-4p-" + monster.p3 + ".png";
+			break;
+		case "4p":
+			monster.image_2p.src = "img/monster/" + (scene.horizontal ? "vert" : "horz") + "-2p-" + monster.p4 + ".png";
+			monster.image_3p.src = "img/monster/" + (scene.horizontal ? "vert" : "horz") + "-3p-" + monster.p4 + ".png";
+			monster.image_4p.src = "img/monster/" + (scene.horizontal ? "vert" : "horz") + "-4p-" + monster.p4 + ".png";
+			break;
+		default:
+			monster.image_2p.src = "img/monster/" + (scene.horizontal ? "vert" : "horz") + "-2p-" + monster.p2 + ".png";
+			monster.image_3p.src = "img/monster/" + (scene.horizontal ? "vert" : "horz") + "-3p-" + monster.p3 + ".png";
+			monster.image_4p.src = "img/monster/" + (scene.horizontal ? "vert" : "horz") + "-4p-" + monster.p4 + ".png";
+		}
+	}
+}
+
+Room.prototype.drawRoom = function(ctx, onload) {
+	if (!this.visible) return;
+	if (this.image.complete) {
+		ctx.save();
+		ctx.translate(this.x, this.y);
+		ctx.rotate(this.r * Math.PI / 180);
+		ctx.scale(0.25, 0.25);
+		ctx.drawImage(this.image, 0, 0);
+		ctx.restore();
+	} else {
+		this.image.onload = onload;
+	}
+}
+Room.prototype.drawContents = function(ctx, onload) {
+	if (!this.visible) return;
+	for (var j in this.tokens) {
+		var token = this.tokens[j];
+		if (token.image.complete) {
+			ctx.save();
+			var x = currentScenario.hexX(token.x, token.y);
+			var y = currentScenario.hexY(token.x, token.y);
+			ctx.translate(x, y);
+			ctx.scale(0.1, 0.1);
+			if (token.r) {
+				ctx.translate(token.image.width*0.5, token.image.height*0.5);
+				ctx.rotate(token.r * Math.PI / 180);
+				ctx.translate(-token.image.width*0.5, -token.image.height*0.5);
+			}
+			ctx.drawImage(token.image, 0, 0);
+			ctx.restore();
+		} else {
+			token.image.onload = onload;
+		}
+	}
+
+	for (var j in this.monsters) {
+		var monster = this.monsters[j];
+		if (monster.image.complete) {
+			ctx.save();
+			var x = currentScenario.hexX(monster.x, monster.y);
+			var y = currentScenario.hexY(monster.x, monster.y);
+			ctx.translate(x, y);
+			ctx.scale(0.1, 0.1);
+			ctx.drawImage(monster.image, 0, 0);
+
+			if (monster.image_2p.complete) {
+				ctx.drawImage(monster.image_2p, 0, 0);
+			} else {
+				monster.image_2p.onload = redrawCallback;
+			}
+			if (monster.image_3p.complete) {
+				ctx.drawImage(monster.image_3p, 0, 0);
+			} else {
+				monster.image_3p.onload = redrawCallback;
+			}
+			if (monster.image_4p.complete) {
+				ctx.drawImage(monster.image_4p, 0, 0);
+			} else {
+				monster.image_4p.onload = redrawCallback;
+			}
+			ctx.restore();
+		} else {
+			monster.image.onload = redrawCallback;
+		}
+	}
 }
 
 function parseSheetsScenario(values) {
@@ -105,6 +220,10 @@ function parseSheetsScenario(values) {
 		case "Token" :
 			room.addToken(values[i][1], values[i][2], values[i][3], values[i][4]);
 			break;
+		case "Monster" :
+			room.addMonster(horizontal, values[i][1], values[i][2], values[i][3], values[i][5], values[i][6], values[i][7]);
+			break;
+
 		}
 	}
 	if (room !== null) {
@@ -115,6 +234,10 @@ function parseSheetsScenario(values) {
 
 var currentScenario = new Scene("Select a scenario");
 function redrawMap(canvas,ctx) {
+	var redrawCallback = function() {
+		redrawMap(canvas, ctx);
+	}
+
 // Clear the canvas prior to drawing
 	ctx.save();
 	ctx.setTransform(1,0,0,1,0,0);
@@ -122,42 +245,10 @@ function redrawMap(canvas,ctx) {
 	ctx.restore();
 
 	for (var i in currentScenario.rooms) {
-		var room = currentScenario.rooms[i];
-		if (!room.visited) continue;
-		if (!room.image.complete) {
-			room.image.onload = redrawMap;
-			continue;
-		}
-		ctx.save();
-		ctx.translate(room.x, room.y);
-		ctx.rotate(room.r * Math.PI / 180);
-		ctx.scale(0.25, 0.25);
-		ctx.drawImage(room.image, 0, 0);
-		ctx.restore();
+		currentScenario.rooms[i].drawRoom(ctx, redrawCallback);
 	}
-
 	for (var i in currentScenario.rooms) {
-		var room = currentScenario.rooms[i];
-		if (!room.visited) continue;
-		for (var j in room.tokens) {
-			var token = room.tokens[j];
-			if (!token.image.complete) {
-				token.image.onload = redrawMap;
-				continue;
-			}
-			ctx.save();
-			var x = currentScenario.hexX(token.x, token.y);
-			var y = currentScenario.hexY(token.x, token.y);
-			ctx.translate(x, y);
-			ctx.scale(0.1, 0.1);
-			if (token.r) {
-				ctx.translate(token.image.width*0.5, token.image.height*0.5);
-				ctx.rotate(token.r * Math.PI / 180);
-				ctx.translate(-token.image.width*0.5, -token.image.height*0.5);
-			}
-			ctx.drawImage(token.image, 0, 0);
-			ctx.restore();
-		}
+		currentScenario.rooms[i].drawContents(ctx, redrawCallback);
 	}
 }
 
@@ -167,7 +258,8 @@ $( document ).ready(function() {
 var canvas = ($("#map"))[0];
 var ctx = zoomPanContext(canvas, 1.05, redrawMap);
 
-function setScenario(scene) {
+function setScenario(scene, mode) {
+	scene.prepare(mode);
 	currentScenario = scene;
 	$("#title").text(scene.title);
 	$("#requirements").text(scene.requirements);
@@ -182,6 +274,7 @@ function setScenario(scene) {
 			$("<span class='textsection'><span class='heading'><h3>" + text.key + "</h3></span>" + blocktext(text.text) + "</span>").appendTo("#introduction");
 		}
 	}
+
 	redrawMap(canvas,ctx);
 }
 
@@ -210,7 +303,8 @@ function previewScenario(pack, key) {
 				$(blocktext(scene.blurb)).appendTo("#scenario-description");
 				var startbutton = $("<button class='startbutton'>Start this scenario</button>");
 				startbutton.appendTo("#scenario-description");
-				startbutton.click(function() { setScenario(scene) });
+				var mode = "print"; // TODO
+				startbutton.click(function() { setScenario(scene, mode) });
 			}
 			});
 		break;
