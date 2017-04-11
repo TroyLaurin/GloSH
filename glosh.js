@@ -11,15 +11,16 @@ function Scene(title, req, goal, rules) {
 	this.rules = rules;
 	this.texts = [];
 	this.blurb = "";
+	this.mode = "print";
 
 	this.horizontal = true;
-	this.originX = 0;
-	this.originY = 0;
+	this.origin = {x:0, y:0};
 
 	this.rooms = {};
 }
 
 function Room(key, x, y, r) {
+	this.scene = null;
 	this.key = key;
 	this.x = +x;
 	this.y = +y;
@@ -27,6 +28,7 @@ function Room(key, x, y, r) {
 
 	this.tokens = [];
 	this.monsters = [];
+	this.labels = [];
 	this.visible = 1;
 
 	this.image = new Image;
@@ -43,27 +45,29 @@ Scene.prototype.setBlurb = function(text) {
 }
 Scene.prototype.addRoom = function(room) {
 	this.rooms[room.key] = room;
+	room.scene = this;
+	console.log("  Adding room " + room.key + " to scenario");
 }
 
 var shortSide = 48.75;
 var longSide  = 84.45;
 Scene.prototype.orient = function(horizontal, originX, originY) {
 	this.horizontal = horizontal;
-	this.originX = originX;
-	this.originY = originY;
+	this.origin = { x: originX, y: originY };
+	console.log("Setting scenario '" + this.title + "' orientation to " + (horizontal ? "horizontal" : "vertical") + " with offsets (" + originX + "," + originY + ")");
 }
 Scene.prototype.hexX = function(x, y) {
 	if (this.horizontal) {
-		return (x + (y % 2) * 0.5) * shortSide + this.originX;
+		return (x + (y % 2) * 0.5) * shortSide + this.origin.x;
 	} else {
-		return (x * 0.5) * longSide + this.originX;
+		return (x * 0.5) * longSide + this.origin.x;
 	}
 }
 Scene.prototype.hexY = function(x, y) {
 	if (this.horizontal) {
-		return (y * 0.5) * longSide + this.originX;
+		return (y * 0.5) * longSide + this.origin.y;
 	} else {
-		return (y + (x % 2) * 0.5) * shortSide + this.originY;
+		return (y + (x % 2) * 0.5) * shortSide + this.origin.y;
 	}
 }
 
@@ -87,8 +91,21 @@ Scene.prototype.prepare = function(mode) {
 Room.prototype.addToken = function(key, x, y, r) {
 	var image = new Image;
 	image.src = "img/token/" + key + ".png";
-	this.tokens.push({ "key": key, "x": +x, "y": +y, "r": +r, "image": image });
-	console.log("Adding token " + image.src + " @ (" + (+x) + "," + (+y) + "/" + (+r) + "°) to room " + this.key);
+	var origin = { x:0, y:0 };
+	switch (key) {
+	case "coin" :
+		origin = { x:239, y:239 }; break;
+	case "table-2h" :
+		origin = { x:209, y:235 }; break;
+	case "start-v" :
+	case "treasure-v" :
+		origin = { x:270, y:239 }; break;
+	
+	default:
+		origin = { x:239, y:270 };
+	}
+	this.tokens.push({ "key": key, "x": +x, "y": +y, "r": +r, "image": image, "origin": origin });
+	console.log("     Adding token " + image.src + " @ (" + (+x) + "," + (+y) + "/" + (+r) + "°) to room " + this.key);
 }
 Room.prototype.addMonster = function(horz, key, x, y, p2, p3, p4) {
 	var image = new Image;
@@ -98,10 +115,19 @@ Room.prototype.addMonster = function(horz, key, x, y, p2, p3, p4) {
 
 	image.src = "img/monster/" + (horz ? "Vert-" : "Horz-") + key + ".png";
 	this.monsters.push({ "key": key, "x": +x, "y": +y, "p2": p2.toLowerCase(), "p3": p3.toLowerCase(), "p4": p4.toLowerCase(), "image": image, "image_2p": image_2p, "image_3p": image_3p, "image_4p": image_4p });
-	console.log("Adding monster " + image.src + " @ (" + (+x) + "," + (+y) + ") " + p2 + "/" + p3 + "/" + p4 + " to room " + this.key);
+	console.log("     Adding monster " + image.src + " @ (" + (+x) + "," + (+y) + ") " + p2 + "/" + p3 + "/" + p4 + " to room " + this.key);
+}
+
+Room.prototype.addLabel = function(text, x, y) {
+	this.labels.push({ "text": text, "x": +x, "y": +y });
+	console.log("     Adding text '" + text + "' @ (" + (+x) + "," + (+y) + ")");
 }
 
 Room.prototype.prepare = function(scene) {
+	if (this.scene !== scene) {
+		console.log("WARNING: preparing a room with a scene that doesn't own this room");
+	}
+
 	for (var i in this.monsters) {
 		var monster = this.monsters[i];
 		switch (scene.mode) {
@@ -133,7 +159,7 @@ Room.prototype.drawRoom = function(ctx, onload) {
 	if (this.image.complete) {
 		ctx.save();
 		ctx.translate(this.x, this.y);
-		ctx.rotate(this.r * Math.PI / 180);
+		if (this.r) ctx.rotate(this.r * Math.PI / 180);
 		ctx.scale(0.25, 0.25);
 		ctx.drawImage(this.image, 0, 0);
 		ctx.restore();
@@ -151,12 +177,8 @@ Room.prototype.drawContents = function(ctx, onload) {
 			var y = currentScenario.hexY(token.x, token.y);
 			ctx.translate(x, y);
 			ctx.scale(0.1, 0.1);
-			if (token.r) {
-				ctx.translate(token.image.width*0.5, token.image.height*0.5);
-				ctx.rotate(token.r * Math.PI / 180);
-				ctx.translate(-token.image.width*0.5, -token.image.height*0.5);
-			}
-			ctx.drawImage(token.image, 0, 0);
+			if (token.r) ctx.rotate(token.r * Math.PI / 180);
+			ctx.drawImage(token.image, -token.origin.x, -token.origin.y);
 			ctx.restore();
 		} else {
 			token.image.onload = onload;
@@ -171,27 +193,49 @@ Room.prototype.drawContents = function(ctx, onload) {
 			var y = currentScenario.hexY(monster.x, monster.y);
 			ctx.translate(x, y);
 			ctx.scale(0.1, 0.1);
-			ctx.drawImage(monster.image, 0, 0);
+			ctx.drawImage(monster.image, -250, -250);
 
 			if (monster.image_2p.complete) {
-				ctx.drawImage(monster.image_2p, 0, 0);
+				ctx.drawImage(monster.image_2p, -250, -250);
 			} else {
-				monster.image_2p.onload = redrawCallback;
+				monster.image_2p.onload = onload;
 			}
 			if (monster.image_3p.complete) {
-				ctx.drawImage(monster.image_3p, 0, 0);
+				ctx.drawImage(monster.image_3p, -250, -250);
 			} else {
-				monster.image_3p.onload = redrawCallback;
+				monster.image_3p.onload = onload;
 			}
 			if (monster.image_4p.complete) {
-				ctx.drawImage(monster.image_4p, 0, 0);
+				ctx.drawImage(monster.image_4p, -250, -250);
 			} else {
-				monster.image_4p.onload = redrawCallback;
+				monster.image_4p.onload = onload;
 			}
 			ctx.restore();
 		} else {
-			monster.image.onload = redrawCallback;
+			monster.image.onload = onload;
 		}
+	}
+
+	for (var j in this.labels) {
+		var label = this.labels[j];
+		ctx.save();
+		var x = currentScenario.hexX(token.x, token.y);
+		var y = currentScenario.hexY(token.x, token.y);
+		ctx.translate(x, y);
+		ctx.fillStyle='white';
+		ctx.beginPath();
+		ctx.arc(0, 0, 15, 15, 0, 2*Math.PI);
+		ctx.fill();
+		ctx.fillStyle='red';
+		ctx.beginPath();
+		ctx.arc(0, 0, 13, 13, 0, 2*Math.PI);
+		ctx.fill();
+		ctx.fillStyle='white';
+		ctx.font="18px Pirata One";
+		ctx.textBaseline="middle"; // XXX could do better using fontmetrics; stupid descender
+		ctx.textAlign="center";
+		ctx.fillText(label.text, 0, 0);
+		ctx.restore();
 	}
 }
 
@@ -223,7 +267,11 @@ function parseSheetsScenario(values) {
 		case "Monster" :
 			room.addMonster(horizontal, values[i][1], values[i][2], values[i][3], values[i][5], values[i][6], values[i][7]);
 			break;
-
+		case "Label" :
+			room.addLabel(values[i][1], values[i][2], values[i][3]);
+			break;
+		default:
+			console.log("WARNING: Unknown entry type (" + values[i][0] + ")");
 		}
 	}
 	if (room !== null) {

@@ -1,3 +1,4 @@
+// Canvas decorations.  Based on code from https://codepen.io/techslides/pen/zowLd?css-preprocessor=none
 // Adds ctx.getTransform() - returns an SVGMatrix
 // Adds ctx.transformedPoint(x,y) - returns an SVGPoint
 function trackTransforms(ctx){
