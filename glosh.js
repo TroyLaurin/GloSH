@@ -323,6 +323,9 @@ function setScenario(scene, mode) {
 		}
 	}
 
+	$("#scenario-setup").addClass("hidden");
+	$("#scenario-content").removeClass("hidden");
+
 	redrawMap(canvas,ctx);
 }
 
@@ -333,7 +336,8 @@ $( "li" ).click(function() {
 var APIKEY="AIzaSyDge-HgZJGs2bPmdpqf2rvVJ_cagmPN5es";
 
 function previewScenario(pack, key) {
-	$("#scenario-description").html("Loading...");
+	$("#pack-description").html("");
+	$("#tabholder .title").text("Loading...");
 	var parts = pack.split(":");
 	switch (parts[0]) {
 	case "google" :
@@ -344,32 +348,40 @@ function previewScenario(pack, key) {
 			cache: true,
 			url: "https://sheets.googleapis.com/v4/spreadsheets/" + parts[1] + "/values/" + key + "!A1:Z1000?key=" + APIKEY,
 			success: function(data) {
-				$("#scenario-description").html("");
 				var scene = parseSheetsScenario(data.values);
-				$("<h1>" + scene.title + "</h1>").appendTo("#scenario-description");
-				$("<span class='requirement'><h3>Requirements:</h3>" + scene.requirements + "</span>").appendTo("#scenario-description");
-				$(blocktext(scene.blurb)).appendTo("#scenario-description");
-				var startbutton = $("<button class='startbutton'>Start this scenario</button>");
-				startbutton.appendTo("#scenario-description");
-				var mode = "print"; // TODO
-				startbutton.click(function() { setScenario(scene, mode) });
+				$("#tabholder .title").text(scene.title);
+				$("#scenario-description .req-text").html(scene.requirements);
+				$("#scenario-description .blurb").html(blocktext(scene.blurb));
+				$("#start-scenario").data("scene", scene);
+				$("#scenario-description").removeClass("hidden");
 			}
 			});
 		break;
 	}
 }
 
+$("#start-scenario").click(function(event) {
+	var mode = $("input[type=radio][name=mode]:checked").val();
+	var scene = $(this).data("scene");
+	if (!scene) {
+		console.log("WARNING: Unable to start scene: no scene selected");
+		return;
+	}
+	setScenario(scene, mode);
+});
+
 $("#scenario-pack").change(function(event) {
 	var pack=$("#scenario-pack").val();
 	if (pack.length == 0) {
 		$("#pack-description").html("");
-		$("#scenario-description").html("");
 		$("#pack-options").html("");
+		$("#scenario-description").addClass("hidden");
 		return;
 	}
 	$("#pack-description").html("Loading...");
-	$("#scenario-description").html("");
-	$("#pack-options").html("");
+	$("#pack-description").removeClass("hidden");
+	$("#pack-options").addClass("hidden");
+	$("#scenario-description").addClass("hidden");
 	var parts = pack.split(":");
 	switch (parts[0]) {
 	case "google" :
@@ -381,13 +393,18 @@ $("#scenario-pack").change(function(event) {
 			url: "https://sheets.googleapis.com/v4/spreadsheets/" + parts[1] + "/values/A1:B1000?key=" + APIKEY,
 			success: function(data) {
 				$("#pack-description").html(blocktext(data.values[0][0]));
+				$("#pack-description").removeClass("hidden");
 				$("#pack-options").html("");
 				for (var i = 1; i < data.values.length; i++) {
 					var val = data.values[i];
 					var option = $("<label class='pack-option'><input name='scenario' type='radio' value='" + val[0] + "' />" + val[1] + "</label>");
 					option.appendTo("#pack-options");
-					option.change(function() { var key = $("input[type=radio][name=scenario]:checked").val(); previewScenario(pack, key); });
+					option.change(function() {
+						var key = $("input[type=radio][name=scenario]:checked").val();
+						previewScenario(pack, key);
+					});
 				}
+				$("#pack-options").removeClass("hidden");
 			}
 			});
 		break;

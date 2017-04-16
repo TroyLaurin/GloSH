@@ -1,57 +1,41 @@
 body { font-family: sans-serif; }
 
-div.tabholder { width: 100%; }
-div.mapholder { width: 100%; }
-
-div.tabholder ul.tabs {
-	list-style: none;
-	display: block;
-}
-
-div.tabholder ul.tabs li {
-	float: left;
-	background: #aaa;
-	margin: 0; padding: 10px;
-}
-
-div.tabholder ul.tabs li.active {
-	display: inline;
-	background: #faa;
-}
-
-div.tabholder div { clear: both; margin: 0.5em; }
-div.tabholder div.tab { display: none; }
-div.tabholder div.tab.active { display: block; }
-
-h1 { font-family: 'Pirata One', fantasy; }
+h1 { font-family: 'Pirata One', fantasy; margin: 0; }
 h2 { font-family: 'Pirata One', fantasy; }
 h3 { display: inline; font-family: 'Pirata One', fantasy; }
 
+.hidden { visibility: hidden !important; position: absolute; width: 0; height: 0; }
+
+#tabholder { width: 100%; position: relative; }
+#mapholder { width: 100%; position: relative; }
+
+#tabholder .spacer { position: absolute; left: 6%; width: 88%; top: 6%; height: 87%; overflow-x: auto; overflow-y: scroll; }
+
 span.textsection .heading h3 { display: block; text-align: center; }
-span.textsection .heading.numbered h3 { background: url('img/number-flair.png'); background-size: contain; background-position: center; background-repeat: no-repeat; vertical-align: middle; text-align: center; height: 2em }
+span.textsection .heading.numbered h3 { background: url('img/number-flair.png'); background-size: contain; background-position: center; background-repeat: no-repeat; vertical-align: middle; text-align: center; height: 2em; }
 
-div.tabholder .spacer { margin: 5% 6%; }
+#mapholder h1 { position: absolute; left: 20%; top: 2.75%; }
+#mapholder .spacer { position: absolute; left: 6%; width: 89%; top: 14%; height: 78%; overflow: hidden; }
 
-div.mapholder h1 { height: 5%; font-family: 'Pirata One', fantasy; margin-top: 20px; margin-left: 100px; }
-div.mapholder .spacer { margin-left: 6%; margin-top: 8%; width: 89%; height: 82%; overflow: hidden; }
+#mapholder .zoom-buttons { position: absolute; left: 5px; top: 5px; }
+#mapholder .zoom-buttons button { display: block; width: 2em; }
 
 button.startbutton { display: block; text-align: center; }
 
 
 @media all and (min-width: 40em) {
-	div.tabholder {
+	#tabholder {
 		position: absolute;
 		left: 0;
 		top: 0;
 		width: 50%;
 		height: 100%;
-		overflow: auto;
 		background: url('img/bg-left.jpg');
 		background-size: 100% 100%;
 		-webkit-background-origin:border;
 	}
 
-	div.mapholder {
+	#mapholder {
 		position: absolute;
 		left: 50%;
 		top: 0;

@@ -10,7 +10,9 @@
 </head>
 
 <body>
-<div class="tabholder"><div class="spacer">
+<div id="tabholder">
+<div class="spacer">
+	<h1 class="title">Select a scenario...</h1>
 	<div id="scenario-setup" action="#">
 		<h3>Scenario pack:</h3>
 		<select name="pack" id="scenario-pack" autocomplete="off">
@@ -22,19 +24,35 @@
 		<div id="pack-options">
 		</div>
 
-		<div id="scenario-description"></div>
+		<div id="scenario-description" class="hidden">
+			<div class="blurb"></div>
+			<span class='requirement'><h3>Requirements:</h3>&nbsp;<span class="req-text"></span></span>
+			<div class="mode">
+				<label class='scenario-mode'><input name='mode' type='radio' value='print' checked='checked' />Print</label>
+				<label class='scenario-mode'><input name='mode' type='radio' value='2p' />2 Player</label>
+				<label class='scenario-mode'><input name='mode' type='radio' value='3p' />3 Player</label>
+				<label class='scenario-mode'><input name='mode' type='radio' value='4p' />4 Player</label>
+			</div>
+			<button class="startbutton" id="start-scenario">Start scenario</button>
+		</div>
 	</div>
-	<div id="tab-scenario-content">
+	<div id="scenario-content" class="hidden">
 		<div><h3>Requirements:</h3>&nbsp;<span id="requirements"></span></div>
 		<div><h3>Goal:</h3>&nbsp;<span id="goal"></span></div>
 		<div><h3>Special Rules:</h3>&nbsp;<span id="rules"></span></div>
 		<div id="introduction"></div>
 	</div>
-</div></div>
-<div class="mapholder">
-	<h1 id="title">Select a scenario...</h2>
+</div>
+</div>
+<div id="mapholder">
+	<h1 class="title">Select a scenario...</h1>
 	<div class="spacer">
 		<canvas id="map" width="4000" height="4000"></canvas>
+		<div class="zoom-buttons">
+			<button id="zoom-in" title="Zoom in">+</button>
+			<button id="zoom-reset" title="Zoom to fit">x</button>
+			<button id="zoom-out" title="Zoom out">-</button>
+		</div>
 	</div>
 </div>
 </body>
